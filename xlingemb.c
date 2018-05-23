@@ -58,6 +58,7 @@ int selcnt = 0;
 float reg_sen = 0;
 int relcnt = 0;
 
+
 real chance=1, alpha = 0.025, starting_alpha, sample = 1e-3;
 real *syn0, *syn1, *syn1neg, *expTable;
 clock_t start;
@@ -317,9 +318,10 @@ void LearnVocabFromTrainFile() {
     if (vocab_size > vocab_hash_size * 0.7) ReduceVocab();
   }
   SortVocab();
-    printf("Vocab size: %lld\n", vocab_size);
+    printf("Vocab size1: %lld\n", vocab_size);
   if (debug_mode > 0) {
-    printf("Words in train file: %lld\n", train_words);
+    printf("Words in train file1: %lld\n", train_words);
+  //  printf("\nNo Problem at 323, LearnVocabFromTrainFile() function");
   }
   file_size = ftell(fin);
   fclose(fin);
@@ -336,7 +338,8 @@ int split2 (const char *str, char* c, char **arr, int count){
 	// count is the maximum number of match
 	char* token;
 	int i = 0;
-	while ((token = strsep(&str, c)) != NULL)
+
+	while ((token = strsep((char **)&str, c)) != NULL)
 	  {
 		if (i >= count) {
 			printf(" Split the string with more than %d appearance", count);
@@ -357,7 +360,7 @@ void ModelInitialization(){
 	char buf[4096];
 	int found =0 ;
 	while (fgets(buf,sizeof(buf),fin) != NULL){
-		char **tokens =  malloc(sizeof(char*) * 2);
+		char *tokens =  malloc(sizeof(char*) * 2);
 		//printf("%s\n",buf);
 		// Trim the input (remove newline and space
 		while (1){
@@ -370,8 +373,9 @@ void ModelInitialization(){
 		int c = split2(buf," ",&tokens, 2);
 		if (c==2) {
 			// The first row
-			if (atoi(tokens[1]) != layer1_size){
-				printf("The reference embeddings have different dimension %d vs %d\n", atoi(tokens[1]),layer1_size);
+
+			if (atoi((char *)&tokens[1]) != layer1_size){
+				printf("The reference embeddings have different dimension %d vs %lld \n", atoi((char *)&tokens[1]),layer1_size);
 				exit(1);
 			}
 		}else{
@@ -380,19 +384,19 @@ void ModelInitialization(){
 				printf("Problem with reference embeddings with line %s \n", buf);
 				exit(1);
 			}
-			int curent_word = SearchVocab(tokens[0]);
+			int curent_word = SearchVocab((char *)&tokens[0]);
 			if (curent_word != -1){
 				int i;
 				found ++;
 				for (i=0; i<layer1_size; i++){
-					syn0[curent_word * layer1_size + i] = atof(tokens[i+1]);
+					syn0[curent_word * layer1_size + i] = atof((char *)&tokens[i+1]);
 				}
 			}
 		}
 
 	}
 	fclose(fin);
-	printf ("Found %d/%d = %f  \n",found, vocab_size, found / (1.0 * vocab_size));
+	printf ("Found %d/%lld = %f  \n",found, vocab_size, found / (1.0 * vocab_size));
 }
 char* concat(char *s1, char *d, char *s2)
 {
@@ -405,23 +409,54 @@ char* concat(char *s1, char *d, char *s2)
 
 void ReadDict(){
 	// Allocate the memory according to the vocab_max_size
-	dict_hash_en = malloc(vocab_max_size * sizeof(int*));
-	dict_hash_it = malloc(vocab_max_size * sizeof(int*));
-	dict_size_en = calloc(vocab_max_size , sizeof(int));
-	dict_size_it = calloc(vocab_max_size , sizeof(int));
 
+
+
+	dict_hash_en = malloc(vocab_max_size * sizeof(int*));
+//printf("\n DEBUGGING IN READDICT() . MALLOC 1");
+//fflush(stdout);
+	dict_hash_it = malloc(vocab_max_size * sizeof(int*));
+//printf("\n DEBUGGING IN READDICT() . MALLOC 2");
+//fflush(stdout);
+	dict_size_en = calloc(vocab_max_size , sizeof(int));
+//printf("\n DEBUGGING IN READDICT() . CALLOC 1");
+//fflush(stdout);
+	dict_size_it = calloc(vocab_max_size , sizeof(int));
+//printf("\n DEBUGGING IN READDICT() . CALLOC 2");
+//fflush(stdout);
 	dict_allocated = calloc(vocab_max_size , sizeof(int));
+//printf("\n DEBUGGING IN READDICT() . CALLOC 3");
+//fflush(stdout);
+
 	int DEFAULT_DICT_ALLOCATED = 10 ;
 	int total_vocab = 0;
 	int en_vocab =0;
 	int it_vocab = 0;
 	int count_pair = 0;
+  //printf("\n Debugging in REadDict , Dict file is %ld",strlen(dict_file));
 	FILE *fin = fopen(dict_file,"rb");
 	char buf[1000];
 	int initial_vocab_size = vocab_size;
-	while (fgets(buf,1000,fin) != NULL){
+  
+//  printf("\n DEBUGGING IN READDICT() , Checking outside fgets(buf) Delete 439== 443");
+   // fflush(stdout);  
+
+// if(fgets(buf,1000,fin)!=NULL)
+// {
+//   printf("\n DEBUGGING IN READDICT() , Checking inside fgets(buf) Delete 439== 443");
+//     fflush(stdout);  
+// }
+
+  while (fgets(buf,1000,fin) != NULL){
+
+//    printf("\n DEBUGGING IN READDICT() , while loop 1 started ");
+ //   fflush(stdout);
+
 		char **tokens  = malloc(sizeof(char*)*2);
 		// Trim the input
+ //   printf("\n DEBUGGING IN READDICT() , while loop 2 start ");
+ //   fflush(stdout);
+
 		while (1){
 			size_t len_buf = strlen(buf);
 			if ((len_buf>0) && ((buf[len_buf-1] == '\n')|| (buf[len_buf-1] == ' ')))
@@ -523,8 +558,9 @@ void ReadVocab() {
   // LD: this sort vocab and filter infrequent words
   SortVocab();
   if (debug_mode > 0) {
-    printf("Vocab size: %lld\n", vocab_size);
-    printf("Words in train file: %lld\n", train_words);
+    printf("Vocab size2: %lld\n", vocab_size);
+    printf("Words in train file2: %lld\n", train_words);
+    printf("\nNo Problem at 531, ReadVocab() function");
   }
   fin = fopen(train_file, "rb");
   if (fin == NULL) {
@@ -668,7 +704,7 @@ int replace_word_with_chance(unsigned long long *next_random, int word, real* co
     		}
     	if (size_candidate > 0){
     		// LD: overwrite word
-    		return get_translation(&next_random, word,size_candidate, candidates, context);
+    		return get_translation((long long unsigned *)&next_random, word,size_candidate, candidates, context);
     	}
     }
     return word;
@@ -776,12 +812,13 @@ void *TrainModelThread(void *id) {
     // - not already replaced by sentence replacement
     int translation = -1;
     if ((selcnt ==0) && (relcnt == 0) && (selall == 0))
-    	if (join)
+    {	if (join)
     		// Keep the word, replace the translation
     		translation = replace_word_with_chance(&next_random, word,NULL);
     	else
     		// Replace the word
     		word = replace_word_with_chance(&next_random, word,NULL);
+    }
     // --------------- END ---------------------
 
 
@@ -1048,11 +1085,13 @@ void TrainModel() {
   if (read_vocab_file[0] != 0) ReadVocab(); else LearnVocabFromTrainFile();
   if (save_vocab_file[0] != 0) SaveVocab();
   // Read the dictionary here
-  printf("Starting reading dictionary using file %s\n", dict_file);
+  printf("\nStarting reading dictionary using file %s\n", dict_file);
   //printf(" Dictionary size : %d\n",vocab_size);
+printf("COMMENTED OUT READDICT() function BY MURALI at 1060");
   ReadDict();
+printf("READ DICT NO PROB");
   if (join2){
-	  printf(" Join dictionary : %d\n",vocab_size);
+	  printf(" Join dictionary : %lld\n",vocab_size);
   }
 
 
@@ -1085,7 +1124,10 @@ void TrainModel() {
 
   printf("=======================================\n");
   if (output_file[0] == 0) return;
-  InitNet();
+
+ // printf("\nCOMMENTED OUT InitNet() function BY MURALI at  1097");
+
+ InitNet();
   if (negative > 0) InitUnigramTable();
 
   start = clock();
@@ -1190,7 +1232,7 @@ int main(int argc, char **argv) {
     printf("\t-dict <file>\n");
     printf("\t\tUse dictionary from <file> to train the cross-lingual system\n");
     printf("\t-chance <float>\n");
-    printf("\t\tChance that we randomly replace with dictionary; default is 1 (100%)\n");
+    printf("\t\tChance that we randomly replace with dictionary; default is 1 (100) \n");
     printf("\t-nosel <int>\n");
     printf("\t\tSelect the dictionary or not; default is 0 (with some selections)\n");
     printf("\t-seldist <int>\n");
